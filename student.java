@@ -2,7 +2,18 @@
 import javax.swing.*;
 import java.awt.*;
 
-public class student {
+public class student extends User{
+   private int registerFees;
+
+    public student(String id, String name) {
+        super(id, name);
+        
+    }
+    public student() {
+        super("", ""); // Default constructor
+    }
+    
+
     public JPanel createStudentStaffPanel(CardLayout cardLayout, JPanel cardPanel) {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
@@ -19,4 +30,6 @@ public class student {
 
         return panel;
     }
+
+    
 }
