@@ -4,6 +4,7 @@ import java.util.ArrayList;
     private String name, date, venue, type;
     private double price;
     private int capacity;
+    private Organizer organizer;
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
@@ -23,4 +24,6 @@ import java.util.ArrayList;
     public int getCapacity() { return capacity; }
     public void setCapacity(int capacity) { this.capacity = capacity; }
 
+    public Organizer getOrganizer() { return organizer; }
+    public void setOrganizer(Organizer organizer) { this.organizer = organizer; }
 }
