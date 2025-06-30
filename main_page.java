@@ -1,28 +1,37 @@
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 public class main_page {
     private JFrame frame;
     private JPanel cardPanel;
     private CardLayout cardLayout;
+    private org organizer; // Single instance of organizer
+    private StudentStaff studentStaff; // Single instance of student staff
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new main_page().createAndShowGUI());
     }
 
     private void createAndShowGUI() {
-        frame = new JFrame("Campus Event Management");
+        frame = new JFrame("Campus Event Management System");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(600, 400);
+        frame.setSize(1200, 800); // Increased size for better layout
+        frame.setMinimumSize(new Dimension(1000, 600));
 
         // Create the card panel with CardLayout
         cardLayout = new CardLayout();
         cardPanel = new JPanel(cardLayout);
 
-        // Create and add your panels
+        // Create shared instances
+        organizer = new org();
+        studentStaff = new StudentStaff(organizer);
+
+        // Create and add your panels using shared instances
         cardPanel.add(createMainPanel(), "MAIN");
-        cardPanel.add(new org().createOrganizerPanel(cardLayout, cardPanel), "ORGANIZER");
-        cardPanel.add(new student().createStudentStaffPanel(cardLayout, cardPanel), "STUDENT_STAFF");
+        cardPanel.add(organizer.createOrganizerPanel(cardLayout, cardPanel), "ORGANIZER");
+        cardPanel.add(studentStaff.createStudentStaffPanel(cardLayout, cardPanel), "STUDENT_STAFF");
         
 
         frame.add(cardPanel);
