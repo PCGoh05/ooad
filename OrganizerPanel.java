@@ -255,6 +255,16 @@ public class OrganizerPanel {
         }
 
         try {
+            // Validate organizer info
+            String id = idField.getText().trim();
+            String name = nameField.getText().trim();
+            
+            if (id.isEmpty() || name.isEmpty()) {
+                JOptionPane.showMessageDialog(parent, "Please fill in organizer information.", 
+                    "Validation Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             String eName = eventName.getText().trim();
             String eDate = eventDate.getText().trim();
             String eVenue = eventVenue.getText().trim();
@@ -287,6 +297,10 @@ public class OrganizerPanel {
                 return;
             }
 
+            // Set organizer info
+            organizer.setOrganizerID(id);
+            organizer.setOrganizerName(name);
+
             // Update event
             selectedEvent.setName(eName);
             selectedEvent.setDate(eDate);
@@ -294,6 +308,9 @@ public class OrganizerPanel {
             selectedEvent.setType(eType);
             selectedEvent.setRegistrationFee(fee);
             selectedEvent.setCapacity(capacity);
+
+            // Save the updated events to file
+            EventFileManager.saveEventsToFile(organizer.getEvents(), organizer.getOrganizerID(), organizer.getOrganizerName());
 
             // Refresh display
             eventList.repaint();
