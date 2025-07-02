@@ -103,4 +103,46 @@ public class DateValidator {
             return false;
         }
     }
+    
+    /**
+     * Checks if early bird discount is available (at least 14 days before event)
+     * @param eventDateStr Event date string in DD/MM/YYYY format
+     * @return true if current date is at least 14 days before event date
+     */
+    public static boolean isEarlyBirdEligible(String eventDateStr) {
+        if (eventDateStr == null || eventDateStr.trim().isEmpty()) {
+            return false;
+        }
+        
+        try {
+            LocalDate eventDate = LocalDate.parse(eventDateStr.trim(), DATE_FORMATTER);
+            LocalDate today = LocalDate.now();
+            LocalDate earlyBirdCutoff = eventDate.minusDays(14);
+            
+            // Early bird is available if today is at least 14 days before the event
+            return !today.isAfter(earlyBirdCutoff);
+        } catch (DateTimeParseException e) {
+            return false;
+        }
+    }
+    
+    /**
+     * Gets the number of days until the event
+     * @param eventDateStr Event date string in DD/MM/YYYY format
+     * @return number of days until event, or -1 if invalid date
+     */
+    public static long getDaysUntilEvent(String eventDateStr) {
+        if (eventDateStr == null || eventDateStr.trim().isEmpty()) {
+            return -1;
+        }
+        
+        try {
+            LocalDate eventDate = LocalDate.parse(eventDateStr.trim(), DATE_FORMATTER);
+            LocalDate today = LocalDate.now();
+            
+            return java.time.temporal.ChronoUnit.DAYS.between(today, eventDate);
+        } catch (DateTimeParseException e) {
+            return -1;
+        }
+    }
 }

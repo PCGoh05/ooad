@@ -4,7 +4,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class StudentStaffPanel {
+public class StudentStaffPanel implements EventObserver {
     private StudentStaff studentStaff;
     private org organizer; // Reference to organizer to get events
     private JList<Event> eventList;
@@ -30,6 +30,11 @@ public class StudentStaffPanel {
     public StudentStaffPanel(StudentStaff studentStaff, org organizer) {
         this.studentStaff = studentStaff;
         this.organizer = organizer != null ? organizer : new org(); // Use provided organizer or create new one
+        
+        // Register as observer to get notified of event changes
+        if (this.organizer != null) {
+            this.organizer.addObserver(this);
+        }
         
         // Initialize additional services
         initializeServices();
@@ -115,9 +120,12 @@ public class StudentStaffPanel {
                     } else if (selectedEvent != null && num > selectedEvent.getAvailableSpots()) {
                         numberOfRegistrationsField.setBackground(new java.awt.Color(255, 200, 200));
                         numberOfRegistrationsField.setToolTipText("Not enough spots available (" + selectedEvent.getAvailableSpots() + " remaining)");
+                    } else if (num >= 5) {
+                        numberOfRegistrationsField.setBackground(new java.awt.Color(200, 255, 200)); // Light green
+                        numberOfRegistrationsField.setToolTipText("🎉 Group discount eligible! You'll get 10% off for 5+ registrations");
                     } else {
                         numberOfRegistrationsField.setBackground(java.awt.Color.WHITE);
-                        numberOfRegistrationsField.setToolTipText("Number of people to register");
+                        numberOfRegistrationsField.setToolTipText("Number of people to register (5+ qualifies for group discount)");
                     }
                 } catch (NumberFormatException e) {
                     numberOfRegistrationsField.setBackground(new java.awt.Color(255, 200, 200));
@@ -148,10 +156,26 @@ public class StudentStaffPanel {
         }
 
         // Discount panel
-        JPanel discountPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JPanel discountPanel = new JPanel();
+        discountPanel.setLayout(new BoxLayout(discountPanel, BoxLayout.Y_AXIS));
         discountPanel.setBorder(BorderFactory.createTitledBorder("Discounts"));
+        
         earlyBirdCheckbox = new JCheckBox("Early Bird Registration (15% off)");
+        
+        // Add discount information labels
+        JLabel groupDiscountInfo = new JLabel("<html><small>📝 Group Discount: Automatic 10% off for 5+ registrations</small></html>");
+        groupDiscountInfo.setFont(new Font("Arial", Font.ITALIC, 11));
+        groupDiscountInfo.setForeground(new Color(100, 100, 100));
+        
+        JLabel earlyBirdInfo = new JLabel("<html><small>⏰ Early Bird: Available up to 14 days before event</small></html>");
+        earlyBirdInfo.setFont(new Font("Arial", Font.ITALIC, 11));
+        earlyBirdInfo.setForeground(new Color(100, 100, 100));
+        
         discountPanel.add(earlyBirdCheckbox);
+        discountPanel.add(Box.createVerticalStrut(5));
+        discountPanel.add(earlyBirdInfo);
+        discountPanel.add(Box.createVerticalStrut(10));
+        discountPanel.add(groupDiscountInfo);
 
         // Buttons panel
         JPanel buttonPanel = new JPanel(new FlowLayout());
@@ -212,6 +236,7 @@ public class StudentStaffPanel {
             if (!e.getValueIsAdjusting()) {
                 selectedEvent = eventList.getSelectedValue();
                 updateEventDetails();
+                updateEarlyBirdEligibility(); // Check early bird eligibility when event is selected
                 
                 // Enable/disable register button based on availability
                 if (selectedEvent != null) {
@@ -279,6 +304,9 @@ public class StudentStaffPanel {
         }
         selectedEvent = null;
         
+        // Update early bird eligibility when events are refreshed
+        updateEarlyBirdEligibility();
+        
         // Update event details (only if eventDetailsArea is initialized)
         if (eventDetailsArea != null) {
             eventDetailsArea.setText("Select an event from the list to view details...");
@@ -344,11 +372,22 @@ public class StudentStaffPanel {
             availableServices.get(i).setSelected(serviceCheckboxes.get(i).isSelected());
         }
 
+        // Validate early bird eligibility before applying discount
+        boolean earlyBirdEligible = earlyBirdCheckbox.isSelected() && DateValidator.isEarlyBirdEligible(selectedEvent.getDate());
+        
+        if (earlyBirdCheckbox.isSelected() && !earlyBirdEligible) {
+            JOptionPane.showMessageDialog(null, 
+                "Early Bird discount is no longer available for this event.\n" +
+                "The discount is only valid up to 14 days before the event date.\n" +
+                "Registration will continue without early bird discount.", 
+                "Early Bird Discount Expired", JOptionPane.WARNING_MESSAGE);
+        }
+
         FeeBreakdown breakdown = feeCalculator.calculateFee(
             selectedEvent.getRegistrationFee(),
             numberOfRegistrations,
             availableServices,
-            earlyBirdCheckbox.isSelected()
+            earlyBirdEligible // Use validated early bird eligibility
         );
 
         // Show confirmation dialog with fee breakdown
@@ -440,12 +479,15 @@ public class StudentStaffPanel {
             availableServices.get(i).setSelected(serviceCheckboxes.get(i).isSelected());
         }
 
+        // Validate early bird eligibility for fee calculation
+        boolean earlyBirdEligible = earlyBirdCheckbox.isSelected() && DateValidator.isEarlyBirdEligible(selectedEvent.getDate());
+
         // Calculate fee breakdown
         FeeBreakdown breakdown = feeCalculator.calculateFee(
             selectedEvent.getRegistrationFee(),
             numberOfRegistrations,
             availableServices,
-            earlyBirdCheckbox.isSelected()
+            earlyBirdEligible // Use validated early bird eligibility
         );
 
         // Show detailed bill
@@ -504,5 +546,68 @@ public class StudentStaffPanel {
         } else {
             eventDetailsArea.setText("Select an event from the list to view details...");
         }
+    }
+
+    private void updateEarlyBirdEligibility() {
+        if (selectedEvent != null) {
+            boolean isEligible = DateValidator.isEarlyBirdEligible(selectedEvent.getDate());
+            long daysUntilEvent = DateValidator.getDaysUntilEvent(selectedEvent.getDate());
+            
+            earlyBirdCheckbox.setEnabled(isEligible);
+            
+            if (isEligible) {
+                earlyBirdCheckbox.setText("Early Bird Registration (15% off) - " + daysUntilEvent + " days until event");
+                earlyBirdCheckbox.setForeground(new Color(0, 150, 0)); // Green text
+                earlyBirdCheckbox.setToolTipText("✅ Early bird discount available! Register now to save 15%");
+            } else {
+                earlyBirdCheckbox.setText("Early Bird Registration (Not Available)");
+                earlyBirdCheckbox.setForeground(new Color(150, 150, 150)); // Gray text
+                earlyBirdCheckbox.setSelected(false); // Uncheck if not eligible
+                
+                if (daysUntilEvent >= 0 && daysUntilEvent < 14) {
+                    earlyBirdCheckbox.setToolTipText("❌ Early bird discount expired (less than 14 days until event)");
+                } else {
+                    earlyBirdCheckbox.setToolTipText("❌ Early bird discount not available for this event");
+                }
+            }
+        } else {
+            earlyBirdCheckbox.setEnabled(false);
+            earlyBirdCheckbox.setText("Early Bird Registration (15% off)");
+            earlyBirdCheckbox.setForeground(Color.BLACK);
+            earlyBirdCheckbox.setSelected(false);
+            earlyBirdCheckbox.setToolTipText("Select an event to check early bird eligibility");
+        }
+    }
+
+    // Observer Pattern Implementation - automatically refresh when events change
+    @Override
+    public void onEventAdded(Event event) {
+        // Add the new event to the list model
+        SwingUtilities.invokeLater(() -> {
+            listModel.addElement(event);
+            System.out.println("Observer: New event added - " + event.getName());
+        });
+    }
+
+    @Override
+    public void onEventUpdated(Event event) {
+        // Refresh the entire list to reflect updates
+        SwingUtilities.invokeLater(() -> {
+            refreshEventList();
+            System.out.println("Observer: Event updated - " + event.getName());
+        });
+    }
+
+    @Override
+    public void onEventRemoved(Event event) {
+        // Remove the event from the list model
+        SwingUtilities.invokeLater(() -> {
+            listModel.removeElement(event);
+            if (selectedEvent == event) {
+                selectedEvent = null;
+                updateEventDetails();
+            }
+            System.out.println("Observer: Event removed - " + event.getName());
+        });
     }
 }

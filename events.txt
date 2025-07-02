@@ -1,2 +1,2 @@
-1|SAW|25/08/2025|DT|Workshop|12.00|10|123|Saw|0
-2|dapu|25/08/2025|DTC|Workshop|12.00|10|123|Saw|5
+1|SAW|04/07/2025|DTC|Cultural Event|100.00|20|1123|asf|0
+2|wwdf|03/08/2025|DTC|Sports Event|10.00|10|1123|asf|0
